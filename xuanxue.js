@@ -108,6 +108,62 @@
   // 排名：天赋值 s 对应「超过百分之几的人」（千分比，下标是天赋值，0～160，校准.js 生成）
   const RANK = [0,0,0,0,0,1,1,1,1,2,3,3,4,7,8,10,13,16,20,23,28,33,41,47,53,61,71,80,89,96,105,115,126,135,146,157,169,180,192,205,219,232,246,259,273,286,300,315,330,346,358,372,385,397,411,427,442,455,468,482,496,511,524,537,554,567,579,593,606,618,631,642,656,668,682,695,706,719,731,742,753,764,774,784,793,801,811,820,827,837,846,854,862,869,876,882,888,895,900,907,912,917,921,926,929,934,938,943,946,950,953,956,959,962,964,966,968,970,971,974,975,978,979,981,983,984,985,987,988,989,990,991,991,992,993,993,994,994,995,996,996,997,997,997,997,998,998,998,998,998,998,999,999,999,999,999,999,1000,1000,1000,1000];
 
+  // 灵力面板：每项由哪些加分项组成；STAR_CUT 是 2、3、4、5 颗星要的分数（校准.js 按随机盘的分布定的）
+  const STATS = [
+    ['悟性', /^(zuo|ge|py|chenPY|chenZY|xuPY|xuZY|cwPY|巳PY|巳ZY|申PY|申ZY|xiao|shangPY|shangZY|shayin|maoyou)$/],
+    ['灵感', /^(shiling|kuigang|yin|taiji|tianyi)$/],
+    ['孤独值', /^(hg|hg2|hgKong|guchen|guasu|tongzi|lone3|lone4)$/],
+    ['鬼神缘', /^(gui|guiZhu|zi|tianmen|dihu|tu)$/],
+    ['开窍运', /^(dyPY|dyPast|ln|dyTu)$/],
+  ];
+  // 大约一星三成、五星一成；悟性四成人是 0 分，所以一星多一些；开窍运 20 分以上就是正走偏印运，给满星
+  const STAR_CUT = { 悟性: [1, 21, 33, 48], 灵感: [8, 13, 16, 20], 孤独值: [4, 10, 14, 23], 鬼神缘: [8, 14, 18, 26], 开窍运: [5, 8, 13, 20] };
+
+  // 鉴定员批注的台词：按加分项，每项几版。{rz} 日柱 {dy} 现在的大运 {ln} 今年流年 {past} 走过的偏印运 {why} 这一项的说明 {pos} 年月日时
+  const COMMENT = {
+    zuo: ['偏印坐在你的日支上，悟性就睡在你枕边，半夜醒来都在开窍。', '自坐偏印：别人要去庙里求的悟性，你出厂就自带。'],
+    ge: ['月令是偏印，偏印格的人天生爱钻冷门学问，越没人懂的你越来劲。', '偏印当令，悟性是你的出厂设置，不是后天补的课。'],
+    py: ['盘里有偏印，看书总能看到字缝里去。', '偏印在，你学东西不走正门，专从侧门溜进去，还溜得最快。'],
+    chenPY: ['辰是龙，偏偏又是你的偏印：最强偏印，龙都在给你打工。', '辰龙当你的偏印，这是玄学圈的 VIP 座位。'],
+    chenZY: ['辰龙是你的正印，祖师奶奶给你留了一个正位。'],
+    xuPY: ['戌主虚空，又是你的偏印，你的脑子自带一根连着宇宙的网线。'],
+    xuZY: ['戌是虚空，又是你的正印，形而上的东西你听一遍就懂。'],
+    cwPY: ['丑是和尚、未是道士，你的偏印坐在寺庙道观里，天生带点仙气。'],
+    巳PY: ['巳是蛇、是散仙，又是你的偏印，前世大概在山里修过几百年。'],
+    巳ZY: ['巳是散仙，又是你的正印，修行这件事你有前世的底子。'],
+    申PY: ['申是神，又是你的偏印，高维世界给你留了一条内线。'],
+    申ZY: ['申是神，又是你的正印，神明给你开了一扇正门。'],
+    xiao: ['偏印撞上食神，枭神夺食，一钻进玄学就忘了吃饭。', '枭神夺食：饭可以不吃，盘一定要排完。'],
+    shangPY: ['伤官配偏印，脑子快、嘴又毒，算得准还说得狠。', '伤官配偏印，一边悟一边说，天生适合开直播讲玄学。'],
+    shangZY: ['伤官配正印，聪明又有分寸，讲玄学讲得像上公开课。'],
+    shayin: ['七杀生偏印，压力越大悟性越高，被逼一逼就开窍。', '杀印相生：别人被压垮的时候，你在偷偷长功力。'],
+    maoyou: ['卯酉相冲又带偏印，灵感是一阵一阵撞出来的。'],
+    tu: ['地支{why}：玄学人的地基你已经打好了。', '{why}，一般搞玄学的人，盘里都有土。'],
+    hg2: ['年支、日支都查出华盖，双华盖的人，独处的时候灵感最多。', '双华盖：热闹是别人的，灵感是你的。'],
+    hg: ['命带华盖，艺术和玄学两条路你都走得通。', '华盖在身，一个人待着的时候最灵。'],
+    hgKong: ['华盖逢空亡，古书说宜僧道，你适合当那个看得最清的旁观者。'],
+    shiling: ['{rz}日是十灵日，老师刚开口你就猜到下一句了。', '十灵日出生，第六感是出厂配置。'],
+    kuigang: ['{rz}日是魁罡，脑子硬、判断快，算起来不拖泥带水。'],
+    taiji: ['太极贵人在命，天生对神秘的东西好奇，越玄越想搞懂。'],
+    tianyi: ['天乙贵人护着你，学玄学总能遇到肯教你的人。'],
+    guchen: ['命里带孤辰，偶尔的孤独，是灵感进门的时候。'],
+    guasu: ['命里带寡宿，一个人的夜晚，最容易接到信号。'],
+    tongzi: ['命带童子煞，从小就比别人敏感，这份敏感就是天线。'],
+    lone4: ['华盖、孤辰、寡宿、童子煞四颗全有，孤独星拉满：你不是不合群，是频道不一样。'],
+    lone3: ['孤独星有三颗，在人群里你总像在走神，其实是在接收信号。'],
+    tianmen: ['地支戌、亥都在，戌亥是天门，你家门口就开着一扇天门。'],
+    dihu: ['地支辰、巳都在，辰巳是地户，地底下的消息你也收得到。'],
+    yin: ['日干、时干都是阴干，你对看不见的东西特别敏感。'],
+    gui: ['癸水通鬼神，你做的梦常常比现实先到。', '盘里有癸水，第六感比别人多一根天线。'],
+    guiZhu癸丑: ['{pos}柱癸丑，从坟里爬出来的鬼，阴间也有你的熟人。'],
+    guiZhu癸未: ['{pos}柱癸未，癸是鬼、未是道士，鬼都跟着道士修行，你也差不到哪去。'],
+    zi: ['地支有子水，子是癸水的家，你的直觉常常半夜上线。'],
+    dyPY: ['现在走{dy}偏印运，正在开窍，这十年学玄学事半功倍。', '{dy}运是偏印运，大运给你开了天眼，抓紧这十年。'],
+    dyPast: ['以前走过{past}偏印运，开过窍的人，底子一直都在。'],
+    ln: ['今年{ln}是你的偏印流年，灵感 buff 叠满，抓紧学。'],
+    dyTu: ['现在走{dy}土运，土是玄学人的地基，正适合打底子。'],
+  };
+
   // opts.dayun：[{ gz: '庚子', startYear: 2021 }, …]；opts.year：按哪一年看现在的大运
   function judge(b, opts) {
     opts = opts || {};
@@ -214,7 +270,7 @@
     const year = opts.year || new Date().getFullYear();
     const isPY = gz => shishen(dm, gz[0]) === '偏印' || shishen(dm, BQ[gz[1]]) === '偏印';
     const pyWhere = gz => shishen(dm, gz[0]) === '偏印' ? '天干' : '地支';
-    let dyNow = null;
+    let dyNow = null, pastPY = '';
     const timeline = [];
     if (opts.dayun && opts.dayun.length) {
       dyNow = opts.dayun.filter(d => d.startYear <= year).pop() || null;
@@ -224,7 +280,8 @@
         else if ('戊己'.includes(dyNow.gz[0]) || '辰戌丑未'.includes(dyNow.gz[1])) { add('dyTu', 5, '正走土运', '现在走' + dyNow.gz + '运' + span + '：土运'); dyNow.kind = '土运'; }
         dyNow.span = span;
         const past = opts.dayun.filter(d => d.startYear < dyNow.startYear && isPY(d.gz));
-        if (!dyNow.kind || dyNow.kind !== '偏印运') if (past.length) add('dyPast', 8, '走过偏印运', '以前走过' + past.map(d => d.gz).join('、') + '偏印运，开过窍', 1);
+        pastPY = past.map(d => d.gz).join('、');
+        if (!dyNow.kind || dyNow.kind !== '偏印运') if (past.length) add('dyPast', 8, '走过偏印运', '以前走过' + pastPY + '偏印运，开过窍', 1);
       }
       // 开窍时间表：这辈子的偏印大运（虚岁 90 以前）
       const by = opts.birthYear;
@@ -251,19 +308,44 @@
     const permille = RANK.length ? RANK[Math.min(score, RANK.length - 1)] : 0;
     const rank = Math.min(99.9, permille / 10);
 
-    // 宜忌：按八字挑一版
+    // 宜忌、批注：按八字挑一版
     const seed = GAN.indexOf(G[2]) + (has4 ? ZHI.indexOf(Z[3]) : 0) + GAN.indexOf(G[1]);
     const C = CARDS[card];
+
+    // 灵力面板：五项各 1～5 颗星
+    const stats = STATS.map(([n, re]) => {
+      const v = items.filter(x => re.test(x.key)).reduce((a, x) => a + x.n, 0);
+      return { n, v, star: 1 + STAR_CUT[n].filter(c => v >= c).length };
+    });
+
+    // 鉴定员批注：分数最高、有台词的三项，各说一句
+    const fill = (t, x) => t.replace('{rz}', P[2]).replace('{dy}', dyNow ? dyNow.gz : '').replace('{ln}', ln).replace('{past}', pastPY).replace('{why}', x.why).replace('{pos}', x.label.slice(0, 1));
+    const said = [];
+    for (const x of items) {
+      const lines = COMMENT[x.key === 'guiZhu' ? 'guiZhu' + P.find(p => p === '癸丑' || p === '癸未') : x.key];
+      if (!lines) continue;
+      said.push(fill(lines[(seed + said.length) % lines.length], x));
+      if (said.length === 3) break;
+    }
+    const comment = said.length ? said.join('') : '盘里暂时没检出什么灵力，不过开窍时间表上写着它什么时候来。';
+
+    // 拜师指南：生我者为印，印就是师父；同阴阳是偏印（教冷门绝学），异阴阳是正印（教正统功夫）。我生者为食伤，可以收作徒弟
+    const W = '木火土金水', wi = wx(dm);
+    const yinWx = W[(wi + 4) % 5], kidWx = W[(wi + 1) % 5];
+    const gansOf = w => GAN.split('').filter(g => GAN_WX[g] === w);
+    const [pyG, zyG] = gansOf(yinWx).sort((a, b) => (yy(a) === yy(dm) ? 0 : 1) - (yy(b) === yy(dm) ? 0 : 1));
+    const master = { dm: dm + GAN_WX[dm], yinWx, py: pyG, zy: zyG, kid: gansOf(kidWx), kidWx };
     return {
       pillars: P, has4, dm, tg, zg,
       items, score, benming, gate, tier: TIERS[t], tierIndex: t, school, card, cardInfo: C,
       rank, talent: TIERS[t].talent, wuShare,
       yi: C.y[seed % C.y.length], ji: C.j[(seed + 1) % C.j.length],
       dyNow, timeline, ln, cai, yin, hurt,
+      stats, comment, master,
     };
   }
 
-  const api = { GAN, ZHI, BQ, GAN_WX, CARDS, TIERS, WU_CUT, parse, judge, shishen, shensha };
+  const api = { GAN, ZHI, BQ, GAN_WX, CARDS, TIERS, WU_CUT, STATS, STAR_CUT, parse, judge, shishen, shensha };
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.Xuanxue = api;
 })(typeof window !== 'undefined' ? window : globalThis);
