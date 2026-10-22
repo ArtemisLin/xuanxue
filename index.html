@@ -83,6 +83,16 @@ body {
 .btn.big { width: 100%; font-size: 21px; padding: 13px 0; }
 .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #b30062; }
 .btn.ghost { background: var(--cream2); color: var(--rose); box-shadow: 0 4px 0 var(--line); border-color: var(--line); }
+.hist { list-style: none; }
+.hist li { display: flex; align-items: center; gap: 8px; border-bottom: 1.5px dashed var(--pink); }
+.hist li a { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px; padding: 10px 2px; text-decoration: none; color: var(--ink); }
+.hist li a b { font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 7em; }
+.hist li a span { font-family: var(--smiley); font-size: 20px; letter-spacing: 1px; white-space: nowrap; }
+.hist li a small { margin-left: auto; font-family: var(--pixel); font-size: 13px; color: var(--mute); white-space: nowrap; }
+.hist li button { flex: none; width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--line); background: var(--cream2); color: var(--soft); font-size: 16px; line-height: 1; cursor: pointer; }
+.hist-foot { display: flex; justify-content: space-between; margin-top: 8px; }
+.hist-foot button { font-family: var(--pixel); font-size: 14px; border: 0; background: none; color: var(--rose); cursor: pointer; padding: 4px 0; }
+.hist-foot button.clr { color: var(--mute); }
 .err, .hint { text-align: center; font-size: 15px; min-height: 22px; margin-top: 10px; }
 .err { color: var(--rose); }
 .hint { color: var(--soft); }
@@ -237,6 +247,11 @@ details.rules ul { margin: 6px 0 0 18px; }
       <div class="hero"><img src="ui/hero.webp" alt="钦天监女官"></div>
       <h1 class="title">玄学天赋鉴定所</h1>
       <p class="sub">本鉴定仅供娱乐，<span class="warn">切勿当真</span></p>
+      <div class="hidden" id="histWrap">
+        <div class="label">鉴定过的八字（点一下直接看结果）</div>
+        <ul class="hist" id="hist"></ul>
+        <div class="hist-foot"><button type="button" id="histMore"></button><button type="button" class="clr" id="histClr">清空记录</button></div>
+      </div>
       <div class="label">你的名字</div>
       <input class="name-in" id="nm" maxlength="10" placeholder="可以不填，填了会印在牌上" autocomplete="off">
       <div class="label">送检八字</div>
@@ -312,7 +327,7 @@ details.rules ul { margin: 6px 0 0 18px; }
     </div>
     <div class="acts hidden" id="acts">
       <button class="btn" id="save">保存 / 分享鉴定牌</button>
-      <a class="btn ghost" href="index.html">再鉴定一个</a>
+      <a class="btn ghost" href="index.html">再鉴定一个 / 看记录</a>
     </div>
     <p class="hint" id="saveHint"></p>
   </div>
@@ -341,9 +356,30 @@ function gz(str) { return [...String(str)].map(c => (isGan(c) || Xuanxue.ZHI.inc
 // 任务栏时钟
 function tick() { const d = new Date(); $('clock').textContent = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
 
+/* ---------- 鉴定记录：存在这台手机的浏览器里，最多 30 条；读不到就当没有 ---------- */
+const HIST_KEY = 'xuanxue-history';
+function loadHist() { try { const v = JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); return Array.isArray(v) ? v.filter(x => x && Xuanxue.parse(x.b)) : []; } catch (e) { return []; } }
+function saveHist(list) { try { localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, 30))); } catch (e) {} }
+function remember(e) { saveHist([e, ...loadHist().filter(x => !(x.b === e.b && (x.name || '') === (e.name || '')))]); }
+function showHist() {
+  const list = loadHist();
+  $('histWrap').classList.toggle('hidden', !list.length);
+  if (!list.length) return;
+  const all = $('hist').dataset.all === '1', shown = all ? list : list.slice(0, 5);
+  const day = t => { const d = new Date(t); return isNaN(d) ? '' : (d.getMonth() + 1) + '月' + d.getDate() + '日'; };
+  $('hist').innerHTML = shown.map((x, i) => '<li><a href="?b=' + encodeURIComponent(x.b) + (x.name ? '&name=' + encodeURIComponent(x.name) : '') + '&open=1">' +
+    '<b>' + esc(x.name || '没写名字') + '</b><span>' + gz(Xuanxue.parse(x.b).join(' ')) + '</span><small>' + day(x.t) + '</small></a>' +
+    '<button type="button" data-i="' + i + '" aria-label="删掉这条">×</button></li>').join('');
+  $('hist').querySelectorAll('button').forEach(el => { el.onclick = () => { const l = loadHist(); l.splice(+el.dataset.i, 1); saveHist(l); showHist(); }; });
+  $('histMore').textContent = list.length > 5 ? (all ? '收起' : '显示全部 ' + list.length + ' 条') : '';
+  $('histMore').onclick = () => { $('hist').dataset.all = all ? '' : '1'; showHist(); };
+  $('histClr').onclick = () => { if (confirm('清空全部鉴定记录？')) { saveHist([]); showHist(); } };
+}
+
 /* ---------- 首页：点格子选字，下面弹出彩色字键 ---------- */
 function showHome() {
   $('home').classList.remove('hidden');
+  showHist();
   const cols = ['年柱', '月柱', '日柱', '时柱'];
   const g = ['', '', '', ''], z = ['', '', '', ''];
   let act = { t: 'g', i: 0 };
@@ -463,6 +499,7 @@ function showResult() {
   $('tab2').classList.remove('hidden');
   const card = r.cardInfo, c = r.card;
   document.title = card.n + ' · 玄学天赋鉴定牌';
+  remember({ b: r.pillars.join(''), name: who, t: Date.now() });
 
   // 报告
   const pos = ['年', '月', '日', '时'];
