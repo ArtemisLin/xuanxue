@@ -133,7 +133,8 @@ details.rules ul { margin: 6px 0 0 18px; }
 .card .tb .btns { display: flex; gap: 7px; }
 .card .tb .btns i { width: 20px; height: 20px; border: 2px solid var(--line); border-radius: 4px; background: var(--cream2); }
 .card .art { position: absolute; top: 98px; left: 58px; width: 604px; height: 604px; border-radius: 302px 302px 18px 18px; overflow: hidden; border: 3px solid var(--line); background-color: #fdeaf1; background-image: linear-gradient(rgba(233,143,176,.22) 1px, transparent 1px), linear-gradient(90deg, rgba(233,143,176,.22) 1px, transparent 1px), linear-gradient(160deg, #fde3ec, #fff3df); background-size: 30px 30px, 30px 30px, 100% 100%; box-shadow: 0 0 0 6px var(--cream2), 0 0 0 8px var(--pink); }
-.card .art img { position: absolute; left: 4%; top: 6%; width: 92%; height: 94%; object-fit: contain; object-position: center bottom; }
+.card .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.card .art img.hero { left: 4%; top: 6%; width: 92%; height: 94%; object-fit: contain; object-position: center bottom; } /* 这张牌还没画插画时，先用首页那张钦天监女官 */
 .card .st1 { position: absolute; top: 72px; left: 20px; width: 64px; z-index: 2; }
 .card .st2 { position: absolute; top: 560px; right: 22px; width: 48px; z-index: 2; }
 .card .badge { position: absolute; top: 88px; left: 50%; transform: translateX(-50%); z-index: 3; padding: 3px 18px; border-radius: 14px; background: var(--gold); color: #fff; font-family: var(--pixel); font-size: 18px; display: none; }
@@ -269,7 +270,7 @@ details.rules ul { margin: 6px 0 0 18px; }
           <div class="frame"></div>
           <div class="tb"><span id="num"></span><span class="btns"><i></i><i></i><i></i></span></div>
           <div class="badge">隐藏款</div>
-          <div class="art"><img src="ui/hero.webp" alt=""></div>
+          <div class="art" id="art"></div>
           <img class="st1" src="ui/star-y.png" alt="">
           <img class="st2" src="ui/star-w.png" alt="">
           <div class="seal"><b>鉴定专用</b><i>仅供娱乐</i></div>
@@ -464,6 +465,12 @@ function showResult() {
   if (c === 0) $('card').classList.add('gold');
   $('num').textContent = 'No.' + String(c).padStart(2, '0') + '  ' + (who ? who + '的' : '') + '玄学天赋鉴定牌.exe';
   if (who.length > 4) $('num').style.fontSize = '18px';
+  // 插画：art/NN.webp（编号＝牌号），没有就先用首页图
+  const img = new Image();
+  img.alt = card.n;
+  img.onload = () => { $('art').innerHTML = ''; $('art').appendChild(img); };
+  img.onerror = () => { img.onerror = null; img.className = 'hero'; img.src = 'ui/hero.webp'; };
+  img.src = 'art/' + String(c).padStart(2, '0') + '.webp';
   const ttl = $('ttl');
   ttl.textContent = card.n;
   ttl.style.fontSize = Math.min(60, Math.floor(600 / card.n.length)) + 'px';
