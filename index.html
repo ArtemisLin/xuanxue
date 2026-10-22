@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>玄学天赋鉴定所</title>
+<style>
+/* 画风跟「拉拉鉴定所」「五行喜忌卡」一套，取自「谷雨 × HERSTORY」易拉宝：粉色双线窗口、奶油底、像素字、四角星、浅色网格 */
+@font-face { font-family: 'Pixel'; src: url('ui/pixel.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Smiley'; src: url('ui/smiley.woff2') format('woff2'); font-display: swap; }
+:root {
+  --bg: #fdf5f8;
+  --grid: #f5dde7;
+  --line: #e98fb0;
+  --rose: #e2007a;
+  --rose-soft: #ffc6dc;
+  --bar: #fcd9e5;
+  --cream: #fff3df;
+  --cream2: #fffaf2;
+  --pink: #fbd6e2;
+  --purple: #4b3fd6;
+  --ink: #211d36;
+  --soft: #5b5670;
+  --mute: #a59fb5;
+  --gold: #f2a900;
+  --sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  --pixel: 'Pixel', var(--sans);
+  --smiley: 'Smiley', var(--sans);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { color: var(--ink); font-family: var(--sans); overflow-x: hidden; }
+body {
+  min-height: 100vh; padding: 26px 16px 90px;
+  background-color: var(--bg);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.hidden { display: none !important; }
+.deco { position: fixed; pointer-events: none; z-index: 0; }
+
+/* ---------- 窗口 ---------- */
+.win { position: relative; z-index: 1; background: var(--cream); border: 2.5px solid var(--line); border-radius: 16px; box-shadow: 0 0 0 4px var(--cream2), 0 0 0 6px var(--line), 0 14px 34px rgba(226, 0, 122, .10); }
+.win > .bar { display: flex; align-items: center; justify-content: space-between; height: 42px; padding: 0 14px; background: var(--bar); border-bottom: 2.5px solid var(--line); border-radius: 13px 13px 0 0; font-family: var(--pixel); font-size: 18px; color: var(--rose); }
+.win > .bar .btns { display: flex; gap: 6px; }
+.win > .bar .btns i { width: 18px; height: 18px; border: 2px solid var(--line); border-radius: 4px; background: var(--cream2); }
+.win > .body { padding: 24px 24px 22px; }
+.label { font-family: var(--pixel); font-size: 16px; color: var(--rose); letter-spacing: 1px; margin: 18px 0 8px; display: flex; align-items: center; gap: 6px; }
+.label::before { content: '✦'; font-size: 14px; }
+.warn { color: var(--rose); font-weight: 700; }
+
+/* ---------- 首页 ---------- */
+.home { max-width: 480px; margin: 0 auto; }
+.hero { position: relative; text-align: center; margin: -6px 0 4px; }
+.hero img { width: 300px; max-width: 82%; filter: drop-shadow(0 6px 14px rgba(226, 0, 122, .15)); }
+.title { font-family: var(--smiley); font-size: 44px; line-height: 1.1; color: var(--rose); text-align: center; text-shadow: 3px 3px 0 var(--rose-soft); letter-spacing: 2px; }
+.sub { text-align: center; color: var(--soft); font-size: 16px; margin-top: 8px; }
+.how { color: var(--soft); font-size: 15px; line-height: 1.6; }
+.name-in { display: block; width: 100%; height: 50px; border: 2px solid var(--line); border-radius: 12px; background: var(--cream2); padding: 0 16px; font-family: var(--sans); font-size: 18px; color: var(--ink); outline: none; }
+.name-in::placeholder { color: #b3aec2; }
+.name-in:focus { border-color: var(--rose); box-shadow: 0 0 0 3px var(--rose-soft); }
+.picks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; text-align: center; margin-top: 10px; }
+.picks .pos { font-family: var(--pixel); font-size: 15px; color: var(--soft); margin-bottom: 5px; }
+.slot { display: block; width: 100%; height: 56px; border-radius: 10px; border: 2px solid var(--line); background: var(--cream2); font-family: var(--smiley); font-size: 32px; color: var(--ink); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.slot.ph { font-family: var(--pixel); font-size: 16px; color: var(--mute); }
+.slot + .slot { margin-top: 8px; }
+.slot.on { border-color: var(--rose); box-shadow: 0 0 0 3px var(--rose-soft); background: #fff; }
+.kb { margin-top: 14px; border: 2px dashed var(--line); border-radius: 12px; padding: 10px 10px 12px; background: var(--cream2); }
+.kb .t { font-family: var(--pixel); font-size: 15px; color: var(--rose); margin-bottom: 9px; }
+.keys { display: grid; gap: 8px; }
+.keys.k5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.keys.k6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.key { height: 58px; border-radius: 10px; border: 2px solid currentColor; background: #fff; font-family: var(--smiley); font-size: 28px; line-height: 1; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; -webkit-tap-highlight-color: transparent; }
+.key small { font-family: var(--pixel); font-size: 11px; opacity: .85; }
+.key:active { transform: translateY(1px); }
+.key.unk { grid-column: 1 / -1; height: 44px; font-family: var(--pixel); font-size: 16px; color: var(--soft); }
+.key.cur { outline: 3px solid var(--rose); outline-offset: 2px; }
+.kb-foot { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 10px; }
+.kb-foot:empty { display: none; }
+.kb-foot button { font-family: var(--pixel); font-size: 15px; padding: 6px 13px; border-radius: 15px; border: 2px solid var(--line); background: #fff; color: var(--rose); cursor: pointer; }
+.kb-foot button.clr { color: var(--soft); }
+.acts { display: flex; gap: 12px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
+.btn { font-family: var(--pixel); font-size: 19px; padding: 11px 28px; border-radius: 26px; border: 2.5px solid var(--rose); cursor: pointer; background: var(--rose); color: #fff; letter-spacing: 1px; text-decoration: none; box-shadow: 0 4px 0 #b30062; }
+.btn.big { width: 100%; font-size: 21px; padding: 13px 0; }
+.btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #b30062; }
+.btn.ghost { background: var(--cream2); color: var(--rose); box-shadow: 0 4px 0 var(--line); border-color: var(--line); }
+.err, .hint { text-align: center; font-size: 15px; min-height: 22px; margin-top: 10px; }
+.err { color: var(--rose); }
+.hint { color: var(--soft); }
+
+/* ---------- 结果页：鉴定报告 ---------- */
+.result { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 26px; }
+.report .head { text-align: center; }
+.report .head b { display: block; font-family: var(--smiley); font-size: 30px; color: var(--rose); text-shadow: 2px 2px 0 var(--rose-soft); letter-spacing: 1px; }
+.report .head span { display: block; color: var(--soft); font-size: 14px; margin-top: 4px; }
+.pillars { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; text-align: center; }
+.pillars .col { border: 2px solid var(--line); border-radius: 12px; background: var(--cream2); padding: 6px 0 8px; }
+.pillars .col.day { background: var(--pink); }
+.pillars .pos { font-family: var(--pixel); font-size: 13px; color: var(--soft); }
+.pillars .gz { font-family: var(--smiley); font-size: 30px; line-height: 1.15; color: var(--ink); }
+.pillars .ss { font-family: var(--pixel); font-size: 12px; color: var(--rose); line-height: 1.35; }
+.evlist { list-style: none; }
+.evlist li { display: grid; grid-template-columns: 22px 104px minmax(0, 1fr) 40px; align-items: center; gap: 6px; font-size: 15px; line-height: 1.45; padding: 6px 0; border-bottom: 1.5px dashed var(--pink); opacity: 0; transform: translateY(6px); transition: opacity .3s, transform .3s; }
+.evlist li.on { opacity: 1; transform: none; }
+.evlist .mk { width: 20px; height: 20px; border-radius: 5px; background: var(--rose); display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; font-weight: 700; }
+.evlist .nm { font-family: var(--pixel); font-size: 15px; color: var(--rose); }
+.evlist .why { color: var(--ink); font-size: 14.5px; }
+.evlist .pt { font-family: var(--smiley); font-size: 20px; color: var(--rose); text-align: right; }
+.evlist li.tot { grid-template-columns: minmax(0, 1fr) auto; border-bottom: none; padding-top: 10px; }
+.evlist li.tot span { font-family: var(--pixel); font-size: 16px; color: var(--soft); }
+.evlist li.tot b { font-family: var(--smiley); font-size: 30px; color: var(--rose); font-weight: 400; }
+.miss { font-size: 14px; color: var(--mute); line-height: 1.6; margin-top: 8px; }
+.verdict { margin-top: 14px; text-align: center; font-family: var(--smiley); font-size: 21px; line-height: 1.45; color: var(--rose); opacity: 0; transition: opacity .5s; }
+.verdict.on { opacity: 1; }
+details.rules { margin-top: 16px; font-size: 14px; color: var(--soft); line-height: 1.7; }
+details.rules summary { font-family: var(--pixel); font-size: 15px; color: var(--rose); cursor: pointer; }
+details.rules ul { margin: 6px 0 0 18px; }
+
+/* ---------- 牌 ---------- */
+.stage { width: 100%; min-width: 0; overflow: hidden; padding: 6px 0 4px; scroll-margin-top: 12px; }
+.scene { perspective: 2400px; cursor: pointer; margin: 0 auto; }
+.flipper { position: relative; transition: transform 1.1s cubic-bezier(.2,.7,.2,1); transform-style: preserve-3d; }
+.flipper.closed { transform: rotateY(180deg); }
+.flipper.done { transform: none; transition: none; transform-style: flat; }
+.flipper.done .back { display: none; }
+.front, .back { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.back { position: absolute; inset: 0; transform: rotateY(180deg); }
+.front .card, .back .card { position: absolute; top: 0; left: 0; }
+
+.card { width: 720px; height: 1234px; transform-origin: top left; background: var(--cream); border-radius: 30px; overflow: hidden; box-shadow: 0 18px 50px rgba(226, 0, 122, .16); }
+.card .frame { position: absolute; inset: 14px; border: 3px solid var(--line); border-radius: 20px; pointer-events: none; }
+.card .frame::after { content: ''; position: absolute; inset: 6px; border: 1.5px solid var(--line); border-radius: 14px; }
+.card .tb { position: absolute; top: 34px; left: 38px; right: 38px; height: 46px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; background: var(--bar); border: 2.5px solid var(--line); border-radius: 12px; font-family: var(--pixel); font-size: 21px; color: var(--rose); }
+.card .tb .btns { display: flex; gap: 7px; }
+.card .tb .btns i { width: 20px; height: 20px; border: 2px solid var(--line); border-radius: 4px; background: var(--cream2); }
+.card .art { position: absolute; top: 98px; left: 58px; width: 604px; height: 604px; border-radius: 302px 302px 18px 18px; overflow: hidden; border: 3px solid var(--line); background-color: #fdeaf1; background-image: linear-gradient(rgba(233,143,176,.22) 1px, transparent 1px), linear-gradient(90deg, rgba(233,143,176,.22) 1px, transparent 1px), linear-gradient(160deg, #fde3ec, #fff3df); background-size: 30px 30px, 30px 30px, 100% 100%; box-shadow: 0 0 0 6px var(--cream2), 0 0 0 8px var(--pink); }
+.card .art img { position: absolute; left: 4%; top: 6%; width: 92%; height: 94%; object-fit: contain; object-position: center bottom; }
+.card .st1 { position: absolute; top: 72px; left: 20px; width: 64px; z-index: 2; }
+.card .st2 { position: absolute; top: 560px; right: 22px; width: 48px; z-index: 2; }
+.card .badge { position: absolute; top: 88px; left: 50%; transform: translateX(-50%); z-index: 3; padding: 3px 18px; border-radius: 14px; background: var(--gold); color: #fff; font-family: var(--pixel); font-size: 18px; display: none; }
+.seal { position: absolute; top: 640px; right: 30px; z-index: 3; width: 104px; height: 104px; border: 3px solid var(--rose); border-radius: 50%; color: var(--rose); display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-14deg); background: rgba(255, 250, 242, .92); font-weight: 700; line-height: 1.15; }
+.seal::before { content: ''; position: absolute; inset: 5px; border: 1px solid var(--rose); border-radius: 50%; }
+.seal b { font-size: 19px; letter-spacing: 1px; }
+.seal i { font-style: normal; font-size: 13px; letter-spacing: 1px; margin-top: 3px; }
+
+.lower { position: absolute; top: 718px; left: 46px; right: 46px; bottom: 34px; display: flex; flex-direction: column; }
+.ttl { text-align: center; font-family: var(--smiley); color: var(--ink); white-space: nowrap; line-height: 1.2; text-shadow: 3px 3px 0 var(--pink); }
+.lv { text-align: center; font-family: var(--pixel); font-size: 19px; color: var(--soft); letter-spacing: 1px; margin-top: 2px; }
+.lv b { font-weight: 400; color: var(--purple); }
+.lv em { font-style: normal; color: var(--rose); }
+.pct { display: flex; align-items: baseline; justify-content: center; gap: 12px; margin-top: 2px; }
+.pct .lab { font-family: var(--pixel); font-size: 21px; color: var(--soft); }
+.pct .val { font-family: var(--smiley); font-size: 68px; color: var(--rose); line-height: 1.05; text-shadow: 3px 3px 0 var(--rose-soft); }
+.pct .sep { font-size: 30px; color: var(--line); }
+.pct .rk { font-family: var(--pixel); font-size: 21px; color: var(--ink); }
+.pct .rk b { font-family: var(--smiley); font-weight: 400; font-size: 34px; color: var(--rose); margin: 0 2px; }
+.quote { margin: 4px 10px 0; text-align: center; line-height: 1.5; color: var(--ink); }
+.quote::before, .quote::after { color: var(--line); }
+.quote::before { content: '「'; }
+.quote::after { content: '」'; }
+.bot { margin-top: auto; padding-top: 12px; border-top: 2px dashed var(--pink); display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 16px; }
+.bot h4 { font-family: var(--pixel); font-size: 16px; color: var(--rose); font-weight: 400; margin-bottom: 6px; }
+.ev ul { list-style: none; }
+.ev li { font-size: 18.5px; line-height: 1.55; padding-left: 24px; position: relative; }
+.ev li::before { content: '✦'; position: absolute; left: 0; color: var(--rose); }
+.ev li b { font-family: var(--smiley); font-weight: 400; color: var(--rose); margin-left: 8px; }
+.yj .row { display: flex; gap: 10px; align-items: flex-start; font-size: 17.5px; line-height: 1.5; margin-bottom: 6px; }
+.yj .tag { flex: none; width: 28px; height: 28px; border-radius: 7px; color: #fff; font-family: var(--pixel); font-size: 17px; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+.yj .yi { background: var(--purple); }
+.yj .ji { background: var(--rose); }
+.dy { margin-top: 12px; min-height: 42px; border-radius: 21px; border: 2px solid var(--line); background: var(--cream2); color: var(--ink); display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 17px; padding: 4px 14px; text-align: center; }
+.dy em { font-style: normal; font-family: var(--pixel); color: var(--rose); margin-right: 4px; white-space: nowrap; }
+.dy b { color: var(--rose); }
+.foot { margin-top: 8px; text-align: center; font-family: var(--pixel); font-size: 15px; color: var(--soft); letter-spacing: 1px; white-space: pre; }
+
+/* 隐藏款：金色 */
+.card.gold { background: #fff6dc; }
+.card.gold .frame, .card.gold .frame::after, .card.gold .tb, .card.gold .art { border-color: var(--gold); }
+.card.gold .tb { background: #ffe9a8; color: #a86f00; }
+.card.gold .art { background-color: #fff3cf; background-image: linear-gradient(rgba(242,169,0,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(242,169,0,.18) 1px, transparent 1px), linear-gradient(160deg, #ffeab0, #fff6dc); box-shadow: 0 0 0 6px #fffaf0, 0 0 0 8px #ffd66b; }
+.card.gold .badge { display: block; }
+
+/* 牌背 */
+.back .card { background-color: var(--pink); background-image: linear-gradient(rgba(233,143,176,.35) 1px, transparent 1px), linear-gradient(90deg, rgba(233,143,176,.35) 1px, transparent 1px); background-size: 36px 36px; }
+.back .mid { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.back .mid img { width: 110px; margin-bottom: 10px; }
+.back .mid b { font-family: var(--smiley); font-size: 64px; color: var(--rose); text-shadow: 4px 4px 0 #fff; letter-spacing: 4px; font-weight: 400; }
+.back .mid span { font-family: var(--pixel); font-size: 22px; color: var(--rose); margin-top: 16px; background: var(--cream2); border: 2px solid var(--line); border-radius: 18px; padding: 6px 20px; }
+
+/* ---------- 任务栏 ---------- */
+.taskbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; height: 50px; padding-bottom: env(safe-area-inset-bottom); display: flex; align-items: center; gap: 10px; padding: 0 14px; background: var(--cream); border-top: 2.5px solid var(--line); font-family: var(--pixel); font-size: 16px; }
+.taskbar .start { padding: 5px 14px; border: 2px solid var(--line); border-radius: 10px; background: var(--pink); color: var(--ink); white-space: nowrap; }
+.taskbar .tab { padding: 5px 12px; border: 2px solid var(--line); border-radius: 10px; background: var(--cream2); color: var(--rose); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.taskbar .clock { margin-left: auto; padding: 5px 12px; border: 2px solid var(--line); border-radius: 10px; background: var(--cream2); color: var(--ink); }
+
+/* 手机保存图 */
+.shot { position: fixed; inset: 0; background: rgba(33, 29, 54, .82); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 20px; z-index: 9; }
+.shot img { max-width: 100%; max-height: 80vh; border-radius: 14px; }
+.shot p { color: #fff; font-size: 17px; text-align: center; line-height: 1.5; }
+
+@media (max-width: 600px) {
+  body { padding: 16px 12px 76px; }
+  .win > .body { padding: 18px 14px 18px; }
+  .title { font-size: 40px; }
+  .evlist li { grid-template-columns: 20px 92px minmax(0, 1fr) 36px; font-size: 14.5px; }
+  .taskbar { gap: 8px; padding: 0 10px; font-size: 15px; }
+  .taskbar .tab.extra { display: none; }
+}
+</style>
+</head>
+<body>
+
+<img class="deco" src="ui/star-y.png" alt="" style="left:2%;top:120px;width:46px">
+<img class="deco" src="ui/star-w.png" alt="" style="right:3%;top:60px;width:38px">
+<img class="deco" src="ui/star-w.png" alt="" style="right:6%;bottom:110px;width:30px">
+
+<!-- 首页：选八字 -->
+<section class="home hidden" id="home">
+  <div class="win">
+    <div class="bar"><span>玄学天赋鉴定所.exe</span><span class="btns"><i></i><i></i><i></i></span></div>
+    <div class="body">
+      <div class="hero"><img src="ui/hero.webp" alt="钦天监女官"></div>
+      <h1 class="title">玄学天赋鉴定所</h1>
+      <p class="sub">本鉴定仅供娱乐，<span class="warn">切勿当真</span></p>
+      <div class="label">你的名字</div>
+      <input class="name-in" id="nm" maxlength="10" placeholder="可以不填，填了会印在牌上" autocomplete="off">
+      <div class="label">送检八字</div>
+      <p class="how">照着你的八字排盘（用哪个排盘 App 都可以），从年柱天干开始点字，选完会自动跳到下一格。点格子可以改。不知道时辰的，时柱点「不知道时辰」。</p>
+      <div class="picks" id="picks"></div>
+      <div class="kb hidden" id="kb"><div class="t" id="kbT"></div><div class="keys" id="keys"></div><div class="kb-foot" id="kbFoot"></div></div>
+      <div class="acts"><button class="btn big" id="go">测测我的玄学天赋 ▶</button></div>
+      <p class="err" id="err"></p>
+    </div>
+  </div>
+</section>
+
+<!-- 结果页 -->
+<div class="result hidden" id="result">
+  <section class="win report">
+    <div class="bar"><span>鉴定报告.exe</span><span class="btns"><i></i><i></i><i></i></span></div>
+    <div class="body">
+      <div class="head"><b>谷雨悟道 · 玄学天赋鉴定所</b><span>玄学天赋鉴定报告 · 本鉴定仅供娱乐，<span class="warn">切勿当真</span></span></div>
+      <div class="label" id="sampleLab">送检八字</div>
+      <div class="pillars" id="pillars"></div>
+      <div class="label">加分清单</div>
+      <ul class="evlist" id="evlist"></ul>
+      <p class="miss" id="miss"></p>
+      <div class="verdict" id="verdict"></div>
+      <details class="rules">
+        <summary>天赋值怎么算的</summary>
+        <ul>
+          <li>偏印最重要：自坐偏印、偏印格 30，别处有偏印 15；财星比印星旺就算被财伤，只给 8 或 5。</li>
+          <li>辰为偏印再加 15（辰为正印 8），戌为偏印 10（正印 5），丑未为偏印 6。</li>
+          <li>地支的土：辰 10、戌 8、丑 4、未 4，最多 18。</li>
+          <li>华盖 10，年支、日支都查出华盖 25；华盖逢空亡 8。十灵日 12，魁罡 8，太极、天乙各 4。</li>
+          <li>孤辰、寡宿各 4，童子煞 3；连华盖四颗全有再加 15，三颗加 6。</li>
+          <li>巳、申要是印才算：偏印 12，正印 8。日主癸 10，别的天干有癸 6；癸丑、癸未在日柱 15、时柱 10、月柱 6。</li>
+          <li>枭神夺食 8，伤官配偏印 8（配正印要两个以上，5），杀印相生 6，卯酉冲带偏印 8，戌亥天门 8，辰巳地户 8，日干时干都是阴干 5。</li>
+          <li>现在走偏印运 10，走土运 5。</li>
+          <li>112 分以上隐藏款；87、71、56、43、29 分各是一道线，第三档（43 分）以上算有玄学天赋，约六成人。每档按分数主要来自十神还是神煞地支，分悟性派和体质派。</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <div class="stage" id="stage">
+    <div class="scene" id="scene">
+      <div class="flipper closed" id="flipper">
+        <div class="front"><div class="card" id="card">
+          <div class="frame"></div>
+          <div class="tb"><span id="num"></span><span class="btns"><i></i><i></i><i></i></span></div>
+          <div class="badge">隐藏款</div>
+          <div class="art"><img src="ui/hero.webp" alt=""></div>
+          <img class="st1" src="ui/star-y.png" alt="">
+          <img class="st2" src="ui/star-w.png" alt="">
+          <div class="seal"><b>鉴定专用</b><i>仅供娱乐</i></div>
+          <div class="lower">
+            <div class="ttl" id="ttl"></div>
+            <div class="lv" id="lv"></div>
+            <div class="pct" id="pct"></div>
+            <div class="quote" id="quote"></div>
+            <div class="bot">
+              <div class="ev"><h4>灵力来源</h4><ul id="ev"></ul></div>
+              <div class="yj"><h4>今日黄历</h4><div id="yj"></div></div>
+            </div>
+            <div class="dy" id="dy"></div>
+            <div class="foot" id="foot"></div>
+          </div>
+        </div></div>
+        <div class="back"><div class="card">
+          <div class="frame"></div>
+          <div class="mid"><img src="ui/star-y.png" alt=""><b>玄学天赋鉴定所</b><span id="backHint">鉴定中……</span></div>
+        </div></div>
+      </div>
+    </div>
+    <div class="acts hidden" id="acts">
+      <button class="btn" id="save">保存 / 分享鉴定牌</button>
+      <a class="btn ghost" href="index.html">再鉴定一个</a>
+    </div>
+    <p class="hint" id="saveHint"></p>
+  </div>
+</div>
+
+<div class="taskbar"><span class="start">✦ START</span><span class="tab" id="tab1">玄学天赋鉴定所.exe</span><span class="tab extra hidden" id="tab2">鉴定牌.exe</span><span class="clock" id="clock"></span></div>
+
+<script src="html2canvas.min.js"></script>
+<script src="bazi-core.js"></script>
+<script src="xuanxue.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const q = new URLSearchParams(location.search);
+const b = (q.get('b') || '').trim();
+const who = (q.get('name') || '').trim().slice(0, 10);
+
+// 字按五行上色：天干看本身，地支看本气（配色跟谷雨八字插件一样）
+// 用函数声明（会提前生效），因为页面一打开就调用 showHome / showResult
+function isGan(c) { return Xuanxue.GAN.includes(c); }
+function wxOf(c) { return isGan(c) ? Xuanxue.GAN_WX[c] : Xuanxue.GAN_WX[Xuanxue.BQ[c]]; }
+function yyOf(c) { return (isGan(c) ? Xuanxue.GAN.indexOf(c) : Xuanxue.ZHI.indexOf(c)) % 2 === 0 ? '阳' : '阴'; }
+function colorOf(c) { return { 木: '#1e8e47', 火: '#c93a28', 土: '#8a5416', 金: '#c29200', 水: '#1f6dbf' }[wxOf(c)]; }
+function gz(str) { return [...String(str)].map(c => (isGan(c) || Xuanxue.ZHI.includes(c)) ? '<span style="color:' + colorOf(c) + '">' + c + '</span>' : esc(c)).join(''); }
+
+// 任务栏时钟
+function tick() { const d = new Date(); $('clock').textContent = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+
+/* ---------- 首页：点格子选字，下面弹出彩色字键 ---------- */
+function showHome() {
+  $('home').classList.remove('hidden');
+  const cols = ['年柱', '月柱', '日柱', '时柱'];
+  const g = ['', '', '', ''], z = ['', '', '', ''];
+  let act = { t: 'g', i: 0 };
+  const order = [0, 1, 2, 3].flatMap(i => [{ t: 'g', i }, { t: 'z', i }]);
+  const val = s => (s.t === 'g' ? g : z)[s.i];
+  const nextEmpty = () => order.find(s => !val(s)) || null;
+
+  function render() {
+    $('picks').innerHTML = cols.map((c, i) => '<div><div class="pos">' + c + '</div>' + ['g', 'z'].map(t => {
+      const v = (t === 'g' ? g : z)[i], on = act && act.t === t && act.i === i;
+      const txt = v === '?' ? '？' : v || (t === 'g' ? '天干' : '地支');
+      return '<button type="button" class="slot' + (v ? '' : ' ph') + (on ? ' on' : '') + '" data-t="' + t + '" data-i="' + i + '"' +
+        (v && v !== '?' ? ' style="color:' + colorOf(v) + '"' : '') + '>' + txt + '</button>';
+    }).join('') + '</div>').join('');
+    $('picks').querySelectorAll('.slot').forEach(el => { el.onclick = () => { act = { t: el.dataset.t, i: +el.dataset.i }; render(); }; });
+    $('kb').classList.remove('hidden');
+    const filled = order.some(s => val(s));
+    const foot = [];
+    if (filled && (!act || order.findIndex(s => s.t === act.t && s.i === act.i) > 0)) foot.push('<button type="button" data-a="back">⌫ 退一格</button>');
+    if (act && act.t === 'z' && g[act.i] && g[act.i] !== '?') foot.push('<button type="button" data-a="gan">改天干</button>');
+    if (filled) foot.push('<button type="button" class="clr" data-a="clear">清空重选</button>');
+    $('kbFoot').innerHTML = foot.join('');
+    $('kbFoot').querySelectorAll('button').forEach(el => { el.onclick = () => tool(el.dataset.a); });
+    if (!act) {
+      $('kbT').textContent = '八个字都选好了。要改哪个字，点上面那一格。';
+      $('keys').className = 'keys'; $('keys').innerHTML = '';
+      return;
+    }
+    const { t, i } = act;
+    const known = g[i] && g[i] !== '?';
+    const keys = t === 'g' ? [...Xuanxue.GAN] : [...Xuanxue.ZHI].filter((x, k) => !known || k % 2 === Xuanxue.GAN.indexOf(g[i]) % 2);
+    $('kbT').textContent = '选' + cols[i] + (t === 'g' ? '的天干' : '的地支') + (t === 'z' && known ? '（' + g[i] + '是' + yyOf(g[i]) + '干，只配' + yyOf(g[i]) + '支）' : '');
+    $('keys').className = 'keys ' + (keys.length === 10 ? 'k5' : 'k6');
+    const cur = (t === 'g' ? g : z)[i];
+    $('keys').innerHTML = keys.map(x => '<button type="button" class="key' + (x === cur ? ' cur' : '') + '" data-v="' + x + '" style="color:' + colorOf(x) + '">' + x + '<small>' + yyOf(x) + wxOf(x) + '</small></button>').join('') +
+      (i === 3 ? '<button type="button" class="key unk" data-v="?">不知道时辰</button>' : '');
+    $('keys').querySelectorAll('.key').forEach(el => { el.onclick = () => pick(el.dataset.v); });
+  }
+
+  // 退一格、改天干、清空重选
+  function tool(a) {
+    $('err').textContent = '';
+    if (a === 'clear') { g.fill(''); z.fill(''); act = order[0]; }
+    else if (a === 'gan') { act = { t: 'g', i: act.i }; }
+    else if (a === 'back') {
+      const k = act ? order.findIndex(s => s.t === act.t && s.i === act.i) : order.length;
+      let j = k - 1;
+      while (j > 0 && !val(order[j])) j--;          // 跳过还空着的格子，退到上一个选过的字
+      const p = order[j];
+      if (val(p) === '?') { g[3] = ''; z[3] = ''; act = { t: 'g', i: 3 }; }
+      else { (p.t === 'g' ? g : z)[p.i] = ''; act = p; }
+    }
+    render();
+  }
+
+  function pick(v) {
+    const { t, i } = act;
+    $('err').textContent = '';
+    if (v === '?') { g[3] = '?'; z[3] = '?'; act = nextEmpty(); render(); return; }
+    if (t === 'g') {
+      g[i] = v;
+      if (z[i] === '?' || (z[i] && Xuanxue.ZHI.indexOf(z[i]) % 2 !== Xuanxue.GAN.indexOf(v) % 2)) z[i] = '';   // 阴阳对不上就清掉地支
+      act = !z[i] ? { t: 'z', i } : nextEmpty();
+    } else {
+      if (g[i] === '?') g[i] = '';
+      z[i] = v;
+      act = nextEmpty();
+    }
+    render();
+  }
+  render();
+
+  $('go').onclick = () => {
+    let s = '';
+    for (let i = 0; i < 4; i++) {
+      if (i === 3 && (g[3] === '?' || z[3] === '?')) break;
+      if (!g[i] || !z[i]) { $('err').textContent = '「' + cols[i] + '」还没选完'; act = { t: !g[i] ? 'g' : 'z', i }; render(); return; }
+      s += g[i] + z[i];
+    }
+    if (!Xuanxue.parse(s)) { $('err').textContent = '有一柱的天干地支配不上（阳干配阳支、阴干配阴支），再对一下排盘'; return; }
+    const nm = $('nm').value.trim();
+    location.search = '?b=' + encodeURIComponent(s) + (nm ? '&name=' + encodeURIComponent(nm) : '');
+  };
+}
+
+/* ---------- 结果页 ---------- */
+// 大运：按八个字在 1960–2015 年里反推出生日子（这几十年里只有一个），再用谷雨八字插件的排盘引擎排大运
+function dayunOf(bz) {
+  try {
+    if (!window.BaziCore) return null;
+    const P = Xuanxue.parse(bz);
+    if (!P) return null;
+    const hours = P.length === 4 ? [P[3]] : [...Xuanxue.ZHI].map((x, i) => Xuanxue.GAN[((Xuanxue.GAN.indexOf(P[2][0]) % 5) * 2 + i) % 10] + x);
+    for (const h of hours) {
+      const o = BaziCore.reverseFourPillars(P[0], P[1], P[2], h, { startYear: 1960, endYear: 2015 })[0];
+      if (!o) continue;
+      const c = BaziCore.computeChart({ clock: { y: o.y, m: o.m, d: o.d, hh: o.hh, mi: o.mi }, gender: '坤', trueSolar: false });
+      return c.daYun.map(d => ({ gz: d.ganZhi, startYear: d.startYear }));
+    }
+  } catch (e) {}
+  return null;
+}
+
+// 报告里点名要查的几样，没中的写在清单下面
+const CHECKS = [
+  ['偏印', ['zuo', 'ge', 'py']], ['华盖', ['hg', 'hg2']], ['十灵日', ['shiling']], ['孤独星', ['lone3', 'lone4']],
+  ['巳申为印', ['巳PY', '巳ZY', '申PY', '申ZY']], ['癸水', ['gui']], ['偏印运、土运', ['dyPY', 'dyTu']],
+];
+
+function showResult() {
+  const dy = dayunOf(b);
+  const r = Xuanxue.judge(b, { dayun: dy, year: new Date().getFullYear() });
+  if (r.error) { showHome(); $('err').textContent = '链接里的八字看不懂，请在上面重新选一次'; return; }
+  $('result').classList.remove('hidden');
+  if (q.has('only')) { document.querySelector('.report').classList.add('hidden'); document.querySelector('.taskbar').classList.add('hidden'); document.body.style.padding = '10px'; }
+  $('tab1').textContent = '鉴定报告.exe';
+  $('tab2').classList.remove('hidden');
+  const card = r.cardInfo, c = r.card;
+  document.title = card.n + ' · 玄学天赋鉴定牌';
+
+  // 报告
+  const pos = ['年', '月', '日', '时'];
+  if (who) $('sampleLab').textContent = '送检八字 · ' + who;
+  $('pillars').innerHTML = r.pillars.map((p, i) =>
+    '<div class="col' + (i === 2 ? ' day' : '') + '"><div class="pos">' + pos[i] + '柱</div><div class="gz">' + gz(p[0]) + '<br>' + gz(p[1]) + '</div><div class="ss">' + (i === 2 ? '日主' : r.tg[i]) + '<br>' + r.zg[i] + '</div></div>'
+  ).join('') + (r.has4 ? '' : '<div class="col"><div class="pos">时柱</div><div class="gz">？<br>？</div><div class="ss">没有时辰</div></div>');
+  $('evlist').innerHTML = r.items.map(x => '<li><span class="mk">✓</span><span class="nm">' + esc(x.label) + '</span><span class="why">' + esc(x.why) + '</span><span class="pt">+' + x.n + '</span></li>').join('') +
+    '<li class="tot"><span>天赋值合计</span><b>' + r.score + '</b></li>';
+  const hit = new Set(r.items.map(x => x.key));
+  const miss = CHECKS.filter(([, ks]) => !ks.some(k => hit.has(k))).map(([n]) => n);
+  $('miss').textContent = (miss.length ? '没检出：' + miss.join('、') + '。' : '') + (dy ? '' : '1960–2015 年里找不到这个八字，没排大运。');
+  const verdict = '天赋值 ' + r.score + '，超过 ' + r.rank + '% 的姐妹\n' + (c === 0 ? '隐藏款' : r.tier.n + ' · ' + r.school) + '「' + card.n + '」';
+  $('verdict').style.whiteSpace = 'pre-line';
+
+  // 牌
+  if (c === 0) $('card').classList.add('gold');
+  $('num').textContent = 'No.' + String(c).padStart(2, '0') + '  ' + (who ? who + '的' : '') + '玄学天赋鉴定牌.exe';
+  if (who.length > 4) $('num').style.fontSize = '18px';
+  const ttl = $('ttl');
+  ttl.textContent = card.n;
+  ttl.style.fontSize = Math.min(60, Math.floor(600 / card.n.length)) + 'px';
+  $('lv').innerHTML = c === 0 ? '<em>隐藏款</em> · 有玄学天赋' : esc(r.tier.n) + ' · <b>' + esc(r.school) + '</b> · ' + (r.talent ? '<em>有玄学天赋</em>' : '天赋差一口气');
+  $('pct').innerHTML = '<span class="lab">天赋值</span><span class="val">' + r.score + '</span><span class="sep">｜</span><span class="rk">超过<b>' + r.rank + '%</b>的姐妹</span>';
+  $('quote').textContent = card.d;
+  $('quote').style.fontSize = (card.d.length > 24 ? 21 : 23) + 'px';
+  const top = r.items.slice(0, 3);
+  $('ev').innerHTML = top.length ? top.map(x => '<li><span>' + esc(x.label) + '</span><b>+' + x.n + '</b></li>').join('') : '<li><span>暂未检出</span></li>';
+  $('yj').innerHTML = '<div class="row"><span class="tag yi">宜</span><span>' + esc(r.yi) + '</span></div><div class="row"><span class="tag ji">忌</span><span>' + esc(r.ji) + '</span></div>';
+  if (r.dyNow) $('dy').innerHTML = '<em>当前大运</em>' + gz(r.dyNow.gz) + '运' + esc(r.dyNow.span) + '：' + (r.dyNow.kind ? '<b>' + r.dyNow.kind + '，灵力 +' + (r.dyNow.kind === '偏印运' ? 10 : 5) + '</b>' : '灵力不加不减');
+  else $('dy').innerHTML = '<em>当前大运</em>没排出来（只认 1960–2015 年出生）';
+  $('foot').innerHTML = (who ? '送检人 ' + esc(who) + '    ' : '') + '送检八字  ' + r.pillars.map(gz).join('  ') + (r.has4 ? '' : '  （没有时辰）');
+
+  fit();
+  window.addEventListener('resize', fit);
+
+  // 加分项一条条亮出来，再翻牌
+  const lis = [...$('evlist').children];
+  const step = Math.max(140, Math.min(300, 3200 / lis.length));
+  let flipped = false;
+  const flip = () => {
+    if (flipped) return; flipped = true;
+    lis.forEach(li => li.classList.add('on'));
+    $('verdict').textContent = verdict; $('verdict').classList.add('on');
+    const f = $('flipper');
+    if (!q.has('open')) $('stage').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    f.classList.remove('closed');
+    setTimeout(() => { f.classList.add('done'); $('acts').classList.remove('hidden'); }, 1150);
+  };
+  if (q.has('open')) { flip(); $('flipper').classList.add('done'); }
+  else {
+    lis.forEach((li, i) => setTimeout(() => li.classList.add('on'), 400 + i * step));
+    const end = 400 + lis.length * step;
+    setTimeout(() => { $('verdict').textContent = verdict; $('verdict').classList.add('on'); $('backHint').textContent = '点击开牌'; }, end + 300);
+    setTimeout(flip, end + 1400);
+    $('scene').onclick = flip;
+  }
+
+  // 翻牌后先在后台把牌画成图，点按钮时立刻调手机的分享面板（苹果手机要求在点击的当下调用）
+  let shot = null;
+  const renderShot = () => shot || (shot = (async () => {
+    await document.fonts.ready;
+    const cv = await html2canvas($('card'), { scale: 2, backgroundColor: null, useCORS: true, onclone: d => { d.getElementById('card').style.transform = 'none'; } });
+    const url = cv.toDataURL('image/png');
+    const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+    return { url, file: new File([blob], '玄学天赋鉴定牌-' + (who ? who + '-' : '') + card.n + '.png', { type: 'image/png' }) };
+  })());
+  const whenOpen = setInterval(() => { if ($('flipper').classList.contains('done')) { clearInterval(whenOpen); renderShot().catch(() => {}); } }, 300);
+  const phone = matchMedia('(pointer: coarse)').matches;
+  const showShot = url => {
+    const box = document.createElement('div');
+    box.className = 'shot';
+    box.innerHTML = '<img alt="鉴定牌"><p>长按图片，可以保存或发给朋友<br>存进相册后就能发朋友圈 · 点空白处关闭</p>';
+    box.querySelector('img').src = url;
+    box.onclick = e => { if (e.target === box) box.remove(); };
+    document.body.appendChild(box);
+  };
+  $('save').onclick = async () => {
+    try {
+      if (phone && shot) {
+        const s = await shot;
+        if (navigator.canShare && navigator.canShare({ files: [s.file] })) {
+          try { await navigator.share({ files: [s.file], title: '玄学天赋鉴定牌', text: (who || '我') + '在玄学天赋鉴定所测出来了：天赋值 ' + r.score + '，' + card.n + '（切勿当真）' }); return; }
+          catch (e) { if (e && e.name === 'AbortError') return; }
+        }
+        showShot(s.url); return;
+      }
+      $('saveHint').textContent = '正在生成图片……';
+      const s = await renderShot();
+      $('saveHint').textContent = '';
+      if (phone) { showShot(s.url); return; }
+      const a = document.createElement('a');
+      a.download = s.file.name;
+      a.href = s.url;
+      a.click();
+      $('saveHint').textContent = '已保存，发到群里比比谁天赋高';
+    } catch (e) {
+      $('saveHint').textContent = '保存没成功，直接截图也行';
+    }
+  };
+}
+
+// 牌按 720×1234 设计：按栏宽缩放
+function fit() {
+  const w = Math.min(720, $('stage').clientWidth || 720);
+  const k = w / 720;
+  document.querySelectorAll('.card').forEach(el => { el.style.transform = 'scale(' + k + ')'; });
+  const H = 1234 * k + 'px', W = 720 * k + 'px';
+  for (const id of ['scene', 'flipper']) { $(id).style.height = H; $(id).style.width = W; }
+}
+
+// 启动放在最后：上面所有的常量、函数都定义好了再跑
+tick(); setInterval(tick, 20000);
+if (!b) showHome(); else showResult();
+</script>
+</body>
+</html>
