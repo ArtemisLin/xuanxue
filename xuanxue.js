@@ -59,7 +59,8 @@
     return all;
   }
 
-  // 七档：分数线是 1960–2015 年随机出生两万个盘排出来的（校准.js），第三档以上算有天赋，约六成
+  // 七档：分数线最早按「第三档以上约六成」从随机盘里排出来，10-22 起固定不再重划：
+  // 每次重划，加了宽松的规则大家一起涨、线也跟着涨，谷雨说规则「越来越紧缩」。现在加分就是真加分
   const TIERS = [
     { min: 112, n: '隐藏款', talent: true },
     { min: 87, n: '第六档', talent: true },
@@ -72,7 +73,7 @@
   // 每档分两派：分数里十神那一路（偏印、印星组合）占得多的是悟性派，神煞地支那一路占得多的是体质派。
   // 切线是该档悟性占比的中位数（校准.js 算的），所以每档两派约一半一半。
   // 第一档大多一分十神分都没有，改看盘里有没有正印（正规学问、讲逻辑），有正印的约一半
-  const WU_CUT = [null, 0.5, 0.467, 0.404, 0.278, 0.135, null];
+  const WU_CUT = [null, 0.511, 0.514, 0.439, 0.34, 0.242, null];
 
   // 牌：0 隐藏款，之后每档 [悟性派, 体质派]
   const CARDS = [
@@ -105,7 +106,7 @@
   ];
 
   // 排名：天赋值 s 对应「超过百分之几的人」（千分比，下标是天赋值，0～160，校准.js 生成）
-  const RANK = [0,0,0,0,1,4,4,5,7,12,16,17,23,32,41,45,50,58,70,78,85,94,107,119,129,141,153,166,180,191,204,219,234,249,264,279,296,310,325,341,355,374,390,403,419,433,450,467,483,497,510,526,539,554,568,582,598,612,624,638,652,664,676,686,699,710,721,731,743,755,764,774,785,794,805,813,822,831,839,847,854,862,870,875,881,887,893,899,903,910,915,919,924,930,933,937,941,946,948,952,954,956,958,960,962,965,967,969,971,974,975,977,979,981,982,983,984,986,987,988,990,990,991,992,992,993,994,995,995,995,996,996,997,997,997,998,998,998,998,999,999,999,999,999,999,999,999,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000];
+  const RANK = [0,0,0,0,0,1,1,1,1,2,3,3,4,7,8,10,13,16,20,23,28,33,41,47,53,61,71,80,89,96,105,115,126,135,146,157,169,180,192,205,219,232,246,259,273,286,300,315,330,346,358,372,385,397,411,427,442,455,468,482,496,511,524,537,554,567,579,593,606,618,631,642,656,668,682,695,706,719,731,742,753,764,774,784,793,801,811,820,827,837,846,854,862,869,876,882,888,895,900,907,912,917,921,926,929,934,938,943,946,950,953,956,959,962,964,966,968,970,971,974,975,978,979,981,983,984,985,987,988,989,990,991,991,992,993,993,994,994,995,996,996,997,997,997,997,998,998,998,998,998,998,999,999,999,999,999,999,1000,1000,1000,1000];
 
   // opts.dayun：[{ gz: '庚子', startYear: 2021 }, …]；opts.year：按哪一年看现在的大运
   function judge(b, opts) {
@@ -121,7 +122,7 @@
     const add = (key, n, label, why, wu) => items.push({ key, n, label, why, wu: !!wu });
     const ZL = Z.map((z, i) => ({ z, i })), at = i => POS[i] + '支' + Z[i];
 
-    // 受伤：财星比印星旺。每个财、印先算 1 分力量：
+    // 受伤：财星比印星旺。每个财、印先算 1 分力量，只算挨着印的财（同柱上下、左右相邻；隔开了克不到）：
     // 财有食伤贴身生（左右相邻或同柱上下）+0.5，天干的财自坐长生、沐浴、冠带、临官、帝旺、养 +0.5，财在月令 +0.5；
     // 印和财同柱上下 −0.5，天干的印自坐病、死、墓、绝 −0.5，印在月令 +0.5
     let cai = 0, yin = 0;
@@ -130,7 +131,7 @@
     for (const row of ['g', 'z']) for (let i = 0; i < P.length; i++) {
       const s = row === 'g' ? tg[i] : zg[i];
       if (!s) continue;
-      if (isCai(s)) {
+      if (isCai(s) && near(row, i).some(p => isYin(ssAt(p)))) {
         let v = 1;
         if (near(row, i).some(p => isShiShang(ssAt(p)))) v += 0.5;
         if (row === 'g' && '长生 沐浴 冠带 临官 帝旺 养'.split(' ').includes(changsheng(G[i], Z[i]))) v += 0.5;
@@ -206,25 +207,44 @@
     else if (G.includes('癸')) add('gui', 6, '天干有癸', '天干透出癸水，癸通鬼神');
     const gp = [2, 3, 1].find(i => P[i] === '癸丑' || P[i] === '癸未');
     if (gp !== undefined) add('guiZhu', { 2: 15, 3: 10, 1: 6 }[gp], POS[gp] + '柱' + P[gp], P[gp] === '癸丑' ? '癸是鬼、丑是墓：从坟里爬出来的鬼' : '癸是鬼、未是道士');
+    if (Z.includes('子')) add('zi', 6, '地支有子水', '子是癸水的地支');
 
-    // 五、大运：现在这一步是偏印运、土运
+    // 五、运：本命定底子，大运流年定什么时候开窍。
+    // 现在走偏印运 +20（大运点火），以前走过偏印运 +8（开过窍），现在走土运 +5，今年流年是偏印 +8
+    const year = opts.year || new Date().getFullYear();
+    const isPY = gz => shishen(dm, gz[0]) === '偏印' || shishen(dm, BQ[gz[1]]) === '偏印';
+    const pyWhere = gz => shishen(dm, gz[0]) === '偏印' ? '天干' : '地支';
     let dyNow = null;
+    const timeline = [];
     if (opts.dayun && opts.dayun.length) {
-      const year = opts.year || new Date().getFullYear();
       dyNow = opts.dayun.filter(d => d.startYear <= year).pop() || null;
       if (dyNow) {
-        const a = shishen(dm, dyNow.gz[0]), z = shishen(dm, BQ[dyNow.gz[1]]);
         const span = '（' + dyNow.startYear + '–' + (dyNow.startYear + 9) + '）';
-        if (a === '偏印' || z === '偏印') { add('dyPY', 10, '正走偏印运', '现在走' + dyNow.gz + '运' + span + '：' + (a === '偏印' ? '天干' : '地支') + '是偏印', 1); dyNow.kind = '偏印运'; }
+        if (isPY(dyNow.gz)) { add('dyPY', 20, '正走偏印运', '现在走' + dyNow.gz + '运' + span + '：' + pyWhere(dyNow.gz) + '是偏印，正在开窍', 1); dyNow.kind = '偏印运'; }
         else if ('戊己'.includes(dyNow.gz[0]) || '辰戌丑未'.includes(dyNow.gz[1])) { add('dyTu', 5, '正走土运', '现在走' + dyNow.gz + '运' + span + '：土运'); dyNow.kind = '土运'; }
         dyNow.span = span;
+        const past = opts.dayun.filter(d => d.startYear < dyNow.startYear && isPY(d.gz));
+        if (!dyNow.kind || dyNow.kind !== '偏印运') if (past.length) add('dyPast', 8, '走过偏印运', '以前走过' + past.map(d => d.gz).join('、') + '偏印运，开过窍', 1);
+      }
+      // 开窍时间表：这辈子的偏印大运（虚岁 90 以前）
+      const by = opts.birthYear;
+      for (const d of opts.dayun) {
+        if (by && d.startYear - by >= 90) break;
+        if (!isPY(d.gz)) continue;
+        const end = d.startYear + 9;
+        timeline.push({ gz: d.gz, from: d.startYear, to: end, age: by ? [d.startYear - by + 1, end - by + 1] : null, state: end < year ? '开过了' : d.startYear <= year ? '正在开' : '还没到' });
       }
     }
+    const ln = GAN[((year - 4) % 10 + 10) % 10] + ZHI[((year - 4) % 12 + 12) % 12];
+    if (isPY(ln)) add('ln', 8, '今年流年偏印', year + '年' + ln + '：' + pyWhere(ln) + '是偏印', 1);
 
     items.sort((a, b) => b.n - a.n);
     const score = items.reduce((a, x) => a + x.n, 0);
+    const benming = score - items.filter(x => /^(dyPY|dyPast|dyTu|ln)$/.test(x.key)).reduce((a, x) => a + x.n, 0);
     const wuShare = score ? items.filter(x => x.wu).reduce((a, x) => a + x.n, 0) / score : 0;
-    const t = TIERS.findIndex(x => score >= x.min);
+    // 隐藏款：总分 112 以上；或者本命已经有 71 分（第五档），现在又正走偏印运
+    const gate = benming >= 71 && dyNow && dyNow.kind === '偏印运';
+    const t = gate ? 0 : TIERS.findIndex(x => score >= x.min);
     const hasZY = [...tg, ...zg].includes('正印');
     const school = t === 0 ? '' : (t === 6 ? hasZY : wuShare >= WU_CUT[t]) ? '悟性派' : '体质派';
     const card = t === 0 ? 0 : (t - 1) * 2 + 1 + (school === '悟性派' ? 0 : 1);
@@ -236,10 +256,10 @@
     const C = CARDS[card];
     return {
       pillars: P, has4, dm, tg, zg,
-      items, score, tier: TIERS[t], tierIndex: t, school, card, cardInfo: C,
+      items, score, benming, gate, tier: TIERS[t], tierIndex: t, school, card, cardInfo: C,
       rank, talent: TIERS[t].talent, wuShare,
       yi: C.y[seed % C.y.length], ji: C.j[(seed + 1) % C.j.length],
-      dyNow, cai, yin, hurt,
+      dyNow, timeline, ln, cai, yin, hurt,
     };
   }
 
