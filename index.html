@@ -288,15 +288,15 @@ details.rules ul { margin: 6px 0 0 18px; }
         <summary>天赋值怎么算的</summary>
         <ul>
           <li>偏印最重要：自坐偏印、偏印格 30，别处有偏印 15；财星比印星旺就算被财伤，只给 8 或 5。</li>
-          <li>辰为偏印再加 15（辰为正印 8），戌为偏印 10（正印 5），丑未为偏印 6。</li>
+          <li>土做印星都加分：辰、戌为偏印 15，为正印 10；丑、未为偏印 10，为正印 6。</li>
           <li>地支的土：辰 10、戌 8、丑 4、未 4，最多 18。</li>
           <li>华盖 10，年支、日支都查出华盖 25；华盖逢空亡 8。十灵日 12，魁罡 8，太极、天乙各 4。</li>
           <li>孤辰、寡宿各 4，童子煞 3；连华盖四颗全有再加 15，三颗加 6。</li>
           <li>巳、申要是印才算：偏印 12，正印 8。日主癸 10，别的天干有癸 6；癸丑、癸未在日柱 15、时柱 10、月柱 6。</li>
-          <li>枭神夺食 8，伤官配偏印 8（配正印要两个以上，5），杀印相生 6，卯酉冲带偏印 8，戌亥天门 8，辰巳地户 8，日干时干都是阴干 5。</li>
+          <li>枭神夺食 8，伤官配偏印 8（配正印要两个以上，5；食神三个以上按伤官算），杀印相生 6，卯酉冲带偏印 8，戌亥天门 8，辰巳地户 8，日干时干都是阴干 5。</li>
           <li>地支有子水 6。财星要挨着印星（同柱上下、左右相邻）才算伤得到印。</li>
-          <li>本命定底子，大运流年定什么时候开窍：现在走偏印运 20，以前走过偏印运 8，今年流年是偏印 8，现在走土运 5。牌上的「开窍时间表」列出这辈子的偏印大运。</li>
-          <li>112 分以上隐藏款；本命已经有 71 分、现在又正走偏印运，也直接升隐藏款。87、71、56、43、29 分各是一道线，第三档（43 分）以上算有玄学天赋。每档按分数主要来自十神还是神煞地支，分悟性派和体质派。</li>
+          <li>本命定底子，大运流年定什么时候开窍：现在走偏印运 20，以前走过偏印运 8，今年流年是偏印 8，现在走土运 5。偏印运坐财（同一步运里另一个字是财）被财破了，分数减半。牌上的「开窍时间表」列出这辈子的偏印大运。</li>
+          <li>130 分以上隐藏款；本命已经有 71 分、现在又正走没被财破的偏印运，也直接升隐藏款。120、110、100、80、60、45、30 分各是一道线，第三档（45 分）以上算有玄学天赋。每档按分数主要来自十神还是神煞地支，分悟性派和体质派。</li>
         </ul>
       </details>
     </div>
@@ -522,7 +522,7 @@ function showResult() {
   const miss = CHECKS.filter(([, ks]) => !ks.some(k => hit.has(k))).map(([n]) => n);
   $('miss').textContent = (miss.length ? '没检出：' + miss.join('、') + '。' : '') + (dy ? '' : '1960–2015 年里找不到这个八字，没排大运。');
   const verdict = '天赋值 ' + r.score + '，超过 ' + r.rank + '% 的姐妹\n' + (c === 0 ? '隐藏款' : r.tier.n + ' · ' + r.school) + '「' + card.n + '」' +
-    (r.gate && r.score < 112 ? '\n本命 ' + r.benming + ' 分，又正走偏印运，直接升隐藏款' : '');
+    (r.gate && r.score < 130 ? '\n本命 ' + r.benming + ' 分，又正走偏印运，直接升隐藏款' : '');
   $('verdict').style.whiteSpace = 'pre-line';
 
   // 牌
@@ -538,7 +538,7 @@ function showResult() {
   img.alt = card.n;
   img.onload = () => { $('art').innerHTML = ''; $('art').appendChild(img); };
   img.onerror = () => { img.onerror = null; img.className = 'hero'; img.src = 'ui/hero.webp'; };
-  img.src = 'art/' + String(c).padStart(2, '0') + '.webp';
+  img.src = 'art/' + card.art + '.webp';
   const ttl = $('ttl');
   ttl.textContent = card.n;
   ttl.style.fontSize = Math.min(60, Math.floor(600 / card.n.length)) + 'px';
@@ -554,9 +554,9 @@ function showResult() {
   // 开窍时间表：最多三段偏印运，先挑正在开的，再挑最近要来的、最近开过的，按时间排
   const tl = r.timeline;
   const pick = [...tl.filter(x => x.state === '正在开'), ...tl.filter(x => x.state === '还没到'), ...tl.filter(x => x.state === '开过了').reverse()].slice(0, 3).sort((a, b2) => a.from - b2.from);
-  const chip = x => '<span class="ck ' + ({ 正在开: 'now', 开过了: 'past', 还没到: '' })[x.state] + '"><i>' + x.state + '</i><span>' + gz(x.gz) + '运 ' + x.from + '–' + x.to + (x.age ? ' · ' + x.age[0] + '–' + x.age[1] + '岁' : '') + '</span></span>';
+  const chip = x => '<span class="ck ' + ({ 正在开: 'now', 开过了: 'past', 还没到: '' })[x.state] + '"><i>' + x.state + '</i><span>' + gz(x.gz) + '运 ' + x.from + '–' + x.to + (x.age ? ' · ' + x.age[0] + '–' + x.age[1] + '岁' : '') + (x.broken ? ' · 坐财' : '') + '</span></span>';
   const lnHit = r.items.find(x => x.key === 'ln');
-  const nowLine = r.dyNow ? '现在走' + gz(r.dyNow.gz) + '运' + esc(r.dyNow.span) + '：' + (r.dyNow.kind === '偏印运' ? '<b>正在开窍，灵力 +20</b>' : r.dyNow.kind === '土运' ? '<b>土运，灵力 +5</b>' : '灵力不加不减') : '';
+  const nowLine = r.dyNow ? '现在走' + gz(r.dyNow.gz) + '运' + esc(r.dyNow.span) + '：' + (r.dyNow.kind === '偏印运' ? (r.dyNow.broken ? '<b>正在开窍，但坐财，灵力 +10</b>' : '<b>正在开窍，灵力 +20</b>') : r.dyNow.kind === '土运' ? '<b>土运，灵力 +5</b>' : '灵力不加不减') : '';
   $('kq').innerHTML = '<h4>开窍时间表 · 偏印大运</h4><div class="kq-row">' +
     (!dy ? '<span class="none">只认 1960–2015 年出生，排不出大运</span>' : pick.length ? pick.map(chip).join('') : '<span class="none">这辈子的大运里没有偏印运，天赋全靠本命</span>') + '</div>' +
     '<div class="kq-now">' + [nowLine, lnHit ? '今年' + gz(r.ln) + '年是偏印流年，<b>灵力 +8</b>' : ''].filter(Boolean).join('　') + '</div>';
